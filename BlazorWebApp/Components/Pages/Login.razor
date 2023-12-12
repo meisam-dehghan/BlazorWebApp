@@ -1,0 +1,72 @@
+﻿
+@using BlazorWebApp.Models
+@using BlazorWebApp.Services
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Antiforgery;
+
+@inject LoginService LoginService
+@inject NavigationManager NavigationManager
+@attribute [RequireAntiforgeryToken]
+
+<div class="mx-auto">
+    <div class="mt-4">
+        <strong>Welcome to Blazor Web  App</strong>
+        <EditForm Context="ctx" FormName="login" Model="loginDto" OnValidSubmit="OnLogin">
+            <div class="mt-2">
+                <div>
+                    <label class="form-label">User Name</label>
+                    <InputText @bind-Value="loginDto.UserName"
+                               class="form-control control-box" />
+                    <ValidationMessage For="@(()=>loginDto.UserName)" />
+                </div>
+                <div>
+                    <label class="form-label">Passoword</label>
+                    <InputText type="password" @bind-Value="loginDto.Password"
+                               class="form-control control-box" />
+                    <ValidationMessage For="@(()=>loginDto.Password)" />
+                </div>
+            </div>
+            <button type="submit" disabled="@isInProgress" class="btn btn-primary mx-auto my-5">
+                <span>Log in</span>
+            </button>
+            @if (loginResult is { Succeeded: false })
+            {
+                <span class="text-danger small">Incorrect user name or password!</span>
+            }
+        </EditForm>
+
+    </div>
+
+</div>
+
+@code {
+    [CascadingParameter]
+    public HttpContext HttpContext { get; set; }
+    [SupplyParameterFromForm]
+    public LoginModel loginDto { get; set; } = new();
+    bool isInProgress;
+    LoginResult? loginResult;
+    protected override void OnInitialized()
+    {
+    }
+    private async Task OnLogin()
+    {
+        try
+        {
+            isInProgress = true;
+            // await Task.Delay(5000);
+            LoginResult loginResult = await LoginService.SignIn(loginDto, HttpContext);
+            isInProgress = false;
+            if (loginResult.Succeeded)
+            {
+                // 'Exception of type 'Microsoft.AspNetCore.Components.NavigationException' is thrown here'
+                NavigationManager.NavigateTo("/");
+            }
+        }
+        catch (Exception)
+        {
+            isInProgress = false;
+        }
+    }
+}
